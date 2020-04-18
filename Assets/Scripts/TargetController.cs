@@ -1,21 +1,43 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Utils;
+
+public enum TargetState
+{
+    THINK,
+    EXPLORE,
+    DOOR,
+    DEAD
+}
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(CircleCollider2D))]
 public class TargetController : MonoBehaviour
 {
-    [Range(0.1f, 10)]
+    public TargetState state = TargetState.THINK;
+
+    [Range(0.1f, 10.0f)]
+    public float thinkTime = 1.0f;
+    [Range(0.1f, 10.0f)]
     public float speed = 1.0f;
+    [Range(0.1f, 2.0f)]
+    public float senseRadius = 1.0f;
+    [Range(0.1f, 10.0f)]
+    public float doorEntrySpeed = 1.0f;
+
+    private float thinkRemaining;
 
     private Transform m_Transform;
     private Rigidbody2D m_Rigidbody;
     private CircleCollider2D m_CircleCollider;
-    private Vector2 direction = Vector2.down;
+
+    private Vector2 currentDirection = Vector2.zero;
+    private DoorController door = null;
 
     void Start()
     {
+        thinkRemaining = thinkTime;
         m_Transform = GetComponent<Transform>();
         m_Rigidbody = GetComponent<Rigidbody2D>();
         m_CircleCollider = GetComponent<CircleCollider2D>();
@@ -23,45 +45,102 @@ public class TargetController : MonoBehaviour
 
     void FixedUpdate()
     {
-
-        RaycastHit2D[] results = new RaycastHit2D[0]; // TODO: Pre-allocate this
-        Vector2 pos = new Vector2(m_Transform.position.x, m_Transform.position.y);
-        Vector2 delta = direction * speed * Time.deltaTime;
-        m_Rigidbody.MovePosition(pos + delta);
+        switch(state)
+        {
+            case TargetState.THINK:
+                m_Transform.position = Snap(m_Transform.position);
+                thinkRemaining -= Time.deltaTime;
+                if (thinkRemaining <= 0.0f)
+                {
+                    if (IsNearDoor())
+                    {
+                        state = TargetState.DOOR;
+                    }
+                    else
+                    {
+                        thinkRemaining = thinkTime;
+                        state = TargetState.EXPLORE;
+                        currentDirection = PickDirection();
+                    }
+                }
+                break;
+            case TargetState.EXPLORE:
+                if (IsNearDoor()) {
+                    m_Transform.position = Snap(m_Transform.position);
+                    state = TargetState.THINK;
+                }
+                else if (IsDirectionBlocked(currentDirection)) {
+                    m_Transform.position = Snap(m_Transform.position);
+                    state = TargetState.THINK;
+                }
+                else
+                {
+                    Vector2 pos = m_Transform.position;
+                    Vector2 delta = currentDirection * speed * Time.fixedDeltaTime;
+                    m_Rigidbody.MovePosition(pos + delta);
+                }
+                break;
+            case TargetState.DOOR:
+                {
+                    currentDirection = door.transform.position - m_Transform.position;
+                    currentDirection.Normalize();
+                    Vector2 pos = m_Transform.position;
+                    Vector2 delta = currentDirection * doorEntrySpeed * Time.fixedDeltaTime;
+                    m_Rigidbody.MovePosition(pos + delta);
+                }
+                break;
+        }
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    bool IsNearDoor()
     {
-        m_Transform.position = new Vector3(
-            (float)Mathf.RoundToInt(m_Transform.position.x),
-            (float)Mathf.RoundToInt(m_Transform.position.y),
-            (float)Mathf.RoundToInt(m_Transform.position.z));
+        Vector3 pos = Snap(m_Transform.position);
+        if (Vector3.Distance(pos, m_Transform.position) > senseRadius) return false;
 
-        Vector2 normal = collision.contacts[0].normal;
-        Vector2 originalNormal = normal;
-
-        if (normal.y > normal.x)
-        {
-            normal.x = 0.0f;
-            normal.y = 1.0f;
-        }
-        else
-        {
-            normal.x = 1.0f;
-            normal.y = 0.0f;
+        Vector2[] options = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+        foreach (var option in options) {
+            var hit = Physics2D.Raycast(pos, option, 1.0f);
+            if (hit.collider == null) continue;
+            door = hit.collider.GetComponent<DoorController>();
+            if (door == null) continue;
+            
+            // Hit door
+            m_CircleCollider.enabled = false;
+            m_Transform.position = pos;
+            return true;
         }
 
-        Vector2 newDirection = new Vector2(normal.y, normal.x);
+        return false;
+    }
 
-        // Randomize direction
-        if (Random.Range(0, 2) == 1) newDirection *= -1.0f;
+    bool IsDirectionBlocked(Vector2 direction)
+    {
+        bool result = Physics2D.Raycast(m_Transform.position, direction, senseRadius).collider != null;
+        if (result) Debug.Log(direction.ToString() + " is blocked");
+        return result;
+    }
 
-        // TODO: Pre-allocate this
-        RaycastHit2D[] results = new RaycastHit2D[2];
-        // Make sure we aren't about to hit something
-        if (m_CircleCollider.Cast(newDirection, results, 0.5f) > 1) newDirection *= -1;
-        if (m_CircleCollider.Cast(newDirection, results, 0.5f) > 1) newDirection = originalNormal;
+    Vector2 PickDirection()
+    {
+        Vector2[] options = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+        int i = options.Length;
+        while (i > 1)
+        {
+            int j = Random.Range(0, i);
+            i--;
+            Vector2 temp = options[i];
+            options[i] = options[j];
+            options[j] = temp;
+        }
 
-        direction = newDirection;
+        foreach (var option in options)
+        {
+            if (!IsDirectionBlocked(option))
+                return option;
+        }
+
+        // Unable to find valid option
+        state = TargetState.THINK;
+        return Vector2.zero;
     }
 }
