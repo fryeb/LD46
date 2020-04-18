@@ -100,7 +100,7 @@ MonoBehaviour:
   state: 0
   thinkTime: 0.5
   speed: 4
-  senseRadius: 0.5
+  senseRadius: 0.8
   doorEntrySpeed: 1
 --- !u!50 &5623334106929665366
 Rigidbody2D:

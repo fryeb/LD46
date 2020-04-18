@@ -80,10 +80,13 @@ public class TargetController : MonoBehaviour
                 break;
             case TargetState.DOOR:
                 {
+                    door.targetEntered = true;
                     currentDirection = door.transform.position - m_Transform.position;
                     currentDirection.Normalize();
                     m_Rigidbody.velocity =  currentDirection * doorEntrySpeed;
                 }
+                break;
+            case TargetState.DEAD:
                 break;
         }
     }
@@ -111,8 +114,9 @@ public class TargetController : MonoBehaviour
 
     bool IsDirectionBlocked(Vector2 direction)
     {
-        bool result = Physics2D.Raycast(m_Transform.position, direction, senseRadius).collider != null;
-        return result;
+        Collider2D collider = Physics2D.Raycast(m_Transform.position, direction, senseRadius).collider;
+
+        return collider != null && !collider.isTrigger;
     }
 
     Vector2 PickDirection()
@@ -137,5 +141,11 @@ public class TargetController : MonoBehaviour
         // Unable to find valid option
         state = TargetState.THINK;
         return Vector2.zero;
+    }
+
+    public void Die()
+    {
+        state = TargetState.DEAD;
+        Debug.Log("Dead"); // TODO: Death screen
     }
 }
