@@ -48,7 +48,7 @@ public class TargetController : MonoBehaviour
         switch(state)
         {
             case TargetState.THINK:
-                m_Transform.position = Snap(m_Transform.position);
+                m_Rigidbody.MovePosition(Snap(m_Transform.position));
                 thinkRemaining -= Time.deltaTime;
                 if (thinkRemaining <= 0.0f)
                 {
@@ -75,18 +75,14 @@ public class TargetController : MonoBehaviour
                 }
                 else
                 {
-                    Vector2 pos = m_Transform.position;
-                    Vector2 delta = currentDirection * speed * Time.fixedDeltaTime;
-                    m_Rigidbody.MovePosition(pos + delta);
+                    m_Rigidbody.velocity =  currentDirection * speed;
                 }
                 break;
             case TargetState.DOOR:
                 {
                     currentDirection = door.transform.position - m_Transform.position;
                     currentDirection.Normalize();
-                    Vector2 pos = m_Transform.position;
-                    Vector2 delta = currentDirection * doorEntrySpeed * Time.fixedDeltaTime;
-                    m_Rigidbody.MovePosition(pos + delta);
+                    m_Rigidbody.velocity =  currentDirection * doorEntrySpeed;
                 }
                 break;
         }
