@@ -116,7 +116,6 @@ public class TargetController : MonoBehaviour
     bool IsDirectionBlocked(Vector2 direction)
     {
         bool result = Physics2D.Raycast(m_Transform.position, direction, senseRadius).collider != null;
-        if (result) Debug.Log(direction.ToString() + " is blocked");
         return result;
     }
 
