@@ -130,6 +130,11 @@ public class TargetController : MonoBehaviour
         return collider != null && !collider.isTrigger;
     }
 
+    private bool IsPerpendicular(Vector2 a, Vector2 b)
+    {
+        return Mathf.Abs(Vector2.Dot(a, b)) < 0.01f;
+    }
+
     Vector2 PickDirection()
     {
         Vector2[] options = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
@@ -141,6 +146,23 @@ public class TargetController : MonoBehaviour
             Vector2 temp = options[i];
             options[i] = options[j];
             options[j] = temp;
+        }
+
+        // Try perpendicular first (selection sort)
+        for (int j = 0; j < options.Length; j++)
+        {
+            if (IsPerpendicular(options[j], currentDirection))
+                continue;
+
+            for (int k = j; k < options.Length; k++)
+            {
+                if (IsPerpendicular(options[k], currentDirection))
+                {
+                    Vector2 temp = options[j];
+                    options[j] = options[k];
+                    options[k] = temp;
+                }
+            }
         }
 
         foreach (var option in options)
