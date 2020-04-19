@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
 
     private Transform m_Transform;
     private Rigidbody2D m_Rigidbody;
+    private SpriteRenderer m_Renderer;
+
     void Start()
     {
         m_Transform = GetComponent<Transform>();

@@ -13,6 +13,7 @@ public enum TargetState
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(CircleCollider2D))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class TargetController : MonoBehaviour
 {
     public TargetState state = TargetState.THINK;
@@ -31,6 +32,7 @@ public class TargetController : MonoBehaviour
     private Transform m_Transform;
     private Rigidbody2D m_Rigidbody;
     private CircleCollider2D m_CircleCollider;
+    private SpriteRenderer m_Renderer;
 
     private Vector2 currentDirection = Vector2.zero;
     private DoorController door = null;
@@ -41,6 +43,15 @@ public class TargetController : MonoBehaviour
         m_Transform = GetComponent<Transform>();
         m_Rigidbody = GetComponent<Rigidbody2D>();
         m_CircleCollider = GetComponent<CircleCollider2D>();
+        m_Renderer = GetComponent<SpriteRenderer>();
+    }
+
+    void Update()
+    {
+        if (m_Rigidbody.velocity.x > 0.1)
+            m_Renderer.flipX = true;
+        else if (m_Rigidbody.velocity.x < -0.1)
+            m_Renderer.flipX = false;
     }
 
     void FixedUpdate()
