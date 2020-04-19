@@ -157,6 +157,6 @@ public class TargetController : MonoBehaviour
     public void Die()
     {
         state = TargetState.DEAD;
-        Debug.Log("Dead"); // TODO: Death screen
+        Camera.main.gameObject.GetComponentInChildren<MenuController>(true).gameObject.SetActive(true);
     }
 }

@@ -18,6 +18,10 @@ public class LavaController : MonoBehaviour
 
         PlayerController player = col.GetComponent<PlayerController>();
         if (player)
-            Debug.Log("Player Dead");
+        {
+            GameObject cameraGO = Camera.main.gameObject;
+            MenuController menu = cameraGO.GetComponentInChildren<MenuController>(true);
+            menu.gameObject.SetActive(true);
+        }
     }
 }
